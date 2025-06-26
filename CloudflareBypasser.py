@@ -28,7 +28,7 @@ class CloudflareBypasser:
                 if result:
                     return result
         return None
-    
+
     def locate_cf_button(self):
         button = None
         eles = self.driver.eles("tag:input")
@@ -37,7 +37,7 @@ class CloudflareBypasser:
                 if "turnstile" in ele.attrs["name"] and ele.attrs["type"] == "hidden":
                     button = ele.parent().shadow_root.child()("tag:body").shadow_root("tag:input")
                     break
-            
+
         if button:
             return button
         else:
@@ -60,6 +60,7 @@ class CloudflareBypasser:
             button = self.locate_cf_button()
             if button:
                 self.log_message("Verification button found. Attempting to click.")
+                #time.sleep(5)
                 button.click()
             else:
                 self.log_message("Verification button not found.")
@@ -76,7 +77,7 @@ class CloudflareBypasser:
             return False
 
     def bypass(self):
-        
+
         try_count = 0
 
         while not self.is_bypassed():
