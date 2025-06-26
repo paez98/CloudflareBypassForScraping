@@ -2,6 +2,8 @@ import time
 import xmltodict
 import logging
 import os
+import json
+import sys
 from CloudflareBypasser import CloudflareBypasser
 from DrissionPage import ChromiumPage, ChromiumOptions
 
@@ -43,12 +45,17 @@ def main():
     else:
         logging.info("Running in visible mode.")
 
-    browser_path = os.getenv('CHROME_PATH', r"C:\Program Files\Google\Chrome\Application\chrome.exe")
-    logging.info(f'Chrome Path: {browser_path}, Exists: {os.path.exists(browser_path)}')
+    browser_path = os.getenv(
+        'CHROME_PATH', r"/usr/bin/google-chrome")
+    # Si quieres usar un navegador diferente, puedes cambiar la ruta aquí
+    # browser_path = os.getenv(
+    #     'CHROME_PATH', r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+    logging.info(
+        f'Chrome Path: {browser_path}, Exists: {os.path.exists(browser_path)}')
 
     arguments = [
         "-no-first-run",
-        #"-force-color-profile=srgb",
+        # "-force-color-profile=srgb",
         "-metrics-recording-only",
         "-password-store=basic",
         "-use-mock-keychain",
@@ -68,13 +75,18 @@ def main():
         logging.info('Navigating to trodo.es.')
         # Acedemos al API de TRODO
 
-        matricula= input('Ingresa la matricula: ')
-        driver.get(f'https://www.trodo.es/rest/V1/partfinder/search/ES/{matricula}/1')
+        if len(sys.argv) < 2:
+            logging.error(
+                "Error: Se requiere la matrícula como argumento. Ejemplo: python test.py ABC1234")
+            sys.exit(1)
+        matricula = sys.argv[1]
 
-        #driver.get(f'https://www.trodo.es/rest/V1/partfinder/search/ES/2482GZG/1')
-        #driver.get(f'https://www.trodo.es/')
-        #driver.get('https://www.carter-cash.es/')
+        driver.get(
+            f'https://www.trodo.es/rest/V1/partfinder/search/ES/{matricula}/1')
+        # driver.get(f'https://www.trodo.es/')
+        # driver.get('https://www.carter-cash.es/')
 
+        time.sleep(1.5)  # Esperamos a que se cargue la página
 
         # --- Parte 1: Bypass Cloudflare  ---
         logging.info('Starting Cloudflare bypass.')
@@ -85,6 +97,11 @@ def main():
         # --- Parte 2: Extraemos los datos obtenidos del requests ---
 
         xml_data = driver.html
+
+        # debug_file = 'debug_myfile.html'
+
+        # with open(debug_file, 'w', encoding='utf-8') as f:
+        #     f.write(xml_data)
 
         parsed_data = xmltodict.parse(xml_data)
 
@@ -108,27 +125,37 @@ def main():
                     return default
             return current
 
-
-        vin_path = ['html', 'body', 'div', 0, 'response', 'item','attributes','vin']
-        brand_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 5, 'label', 'name', 'MagentoFrameworkPhrasetext']
-        full_model_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 4, 'url_key']
-        model_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 4, 'label', 'name']
-        variant_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'name', 'MagentoFrameworkPhrasetext']
-        fuel_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'engine_fuel', 'MagentoFrameworkPhrasetext']
-        liters_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'liters']
-        year_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'year']
-        year_from_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'year_from']
-        year_to_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'year_to']
-        ccm_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'ccm']
-        kw_ps_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'kw_ps']
-        engine_path = ['html', 'body', 'div', 0, 'response', 'item','relationships','data','item','values','item', 2, 'label', 'engine', 'item']
-
-
+        vin_path = ['html', 'body', 'div', 0,
+                    'response', 'item', 'attributes', 'vin']
+        brand_path = ['html', 'body', 'div', 0, 'response', 'item', 'relationships', 'data',
+                      'item', 'values', 'item', 5, 'label', 'name', 'MagentoFrameworkPhrasetext']
+        full_model_path = ['html', 'body', 'div', 0, 'response', 'item',
+                           'relationships', 'data', 'item', 'values', 'item', 4, 'url_key']
+        model_path = ['html', 'body', 'div', 0, 'response', 'item',
+                      'relationships', 'data', 'item', 'values', 'item', 4, 'label', 'name']
+        variant_path = ['html', 'body', 'div', 0, 'response', 'item', 'relationships',
+                        'data', 'item', 'values', 'item', 2, 'label', 'name', 'MagentoFrameworkPhrasetext']
+        fuel_path = ['html', 'body', 'div', 0, 'response', 'item', 'relationships', 'data',
+                     'item', 'values', 'item', 2, 'label', 'engine_fuel', 'MagentoFrameworkPhrasetext']
+        liters_path = ['html', 'body', 'div', 0, 'response', 'item',
+                       'relationships', 'data', 'item', 'values', 'item', 2, 'label', 'liters']
+        year_path = ['html', 'body', 'div', 0, 'response', 'item',
+                     'relationships', 'data', 'item', 'values', 'item', 2, 'label', 'year']
+        year_from_path = ['html', 'body', 'div', 0, 'response', 'item',
+                          'relationships', 'data', 'item', 'values', 'item', 2, 'label', 'year_from']
+        year_to_path = ['html', 'body', 'div', 0, 'response', 'item',
+                        'relationships', 'data', 'item', 'values', 'item', 2, 'label', 'year_to']
+        ccm_path = ['html', 'body', 'div', 0, 'response', 'item',
+                    'relationships', 'data', 'item', 'values', 'item', 2, 'label', 'ccm']
+        kw_ps_path = ['html', 'body', 'div', 0, 'response', 'item',
+                      'relationships', 'data', 'item', 'values', 'item', 2, 'label', 'kw_ps']
+        engine_path = ['html', 'body', 'div', 0, 'response', 'item', 'relationships',
+                       'data', 'item', 'values', 'item', 2, 'label', 'engine', 'item']
 
         model_item = get_data(parsed_data, model_path, {})
         full_model_item = get_data(parsed_data, full_model_path, {})
         brand_item = get_data(parsed_data, brand_path, {})
-        vin_item = get_data(parsed_data,vin_path, {})
+        vin_item = get_data(parsed_data, vin_path, {})
         variant_item = get_data(parsed_data, variant_path, {})
         fuel_item = get_data(parsed_data, fuel_path, {})
         liters_item = get_data(parsed_data, liters_path, {})
@@ -140,20 +167,20 @@ def main():
         engine_item = get_data(parsed_data, engine_path, {})
 
         car_json = {
-            'MATRICULA': matricula ,
-            'VIN': vin_item,
-            'Marca': brand_item,
-            'Modelo Completo': full_model_item,
-            'Modelo':  model_item,
-            'Variante':  variant_item,
-            'Combustible': fuel_item,
-            'Litros': liters_item,
-            'Año': year_item,
-            'Año Desde':  year_from_item,
-            'Año Hasta':  year_to_item,
-            'CCM':  ccm_item,
-            'KW/PS':  kw_ps_item,
-            'Engine': engine_item
+            "MATRICULA": matricula,
+            "VIN": vin_item,
+            "Marca": brand_item,
+            "Modelo Completo": full_model_item,
+            "Modelo":  model_item,
+            "Variante":  variant_item,
+            "Combustible": fuel_item,
+            "Litros": liters_item,
+            "Año": year_item,
+            "Año Desde":  year_from_item,
+            "Año Hasta":  year_to_item,
+            "CCM":  ccm_item,
+            "KW/PS":  kw_ps_item,
+            "Engine": engine_item
         }
 
         for key, value in car_json.items():
@@ -161,12 +188,7 @@ def main():
                 first_item = next(iter(value.values()), None)
                 car_json[key] = first_item
 
-
-
-
-        print(car_json)
-
-
+        print(json.dumps(car_json))
 
     except Exception as e:
         logging.error(f"A ocurrido un error: {e}")
